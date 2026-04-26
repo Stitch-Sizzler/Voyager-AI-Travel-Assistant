@@ -22,4 +22,4 @@ Prerequisites: Node.js (18+) and an active Cloudflare account.
 
 Once the assistant is running, try the following: `What is the weather and top attraction in Tokyo?`
 
-*Note: The assistant currently uses randomized weather data and mock data for attractions.
+**Note: The assistant currently uses randomized weather data and mock data for attractions.**
