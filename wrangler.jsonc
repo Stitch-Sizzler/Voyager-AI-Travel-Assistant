@@ -1,0 +1,11 @@
+{
+  "name": "cf_ai_travel_agent",
+  "main": "src/server.ts",
+  "compatibility_date": "2026-04-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "ai": { "binding": "AI" },
+  "durable_objects": {
+    "bindings": [{ "name": "TravelAgent", "class_name": "TravelAgent" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["TravelAgent"] }]
+}
