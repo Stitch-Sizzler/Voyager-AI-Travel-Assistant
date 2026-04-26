@@ -5,6 +5,7 @@ This repository contains an AI-powered travel assistant built exclusively on the
 ## Application Architecture
 
 This application implements an AI agent loop utilizing Cloudflare Agents:
+
 1. **LLM:** Powered by `llama-4-scout-17b-16e-instruct` via Workers AI.
 2. **User Input:** Chat UI built with React, communicating with the backend over WebSockets, served dynamically.
 3. **Tools:** Implements custom server-side tools (`getWeather` and `getAttraction`) that the LLM calls based on user prompts.
