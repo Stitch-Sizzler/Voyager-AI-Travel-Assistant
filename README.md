@@ -22,4 +22,6 @@ Prerequisites: Node.js (18+) and an active Cloudflare account.
 
 Once the assistant is running, try the following: `What is the weather and top attraction in Tokyo?`
 
+To test memory, follow up with `What about in Paris?` and the assistant should remember the context.
+
 **Note: The assistant currently uses randomized weather data and mock data for attractions.**
