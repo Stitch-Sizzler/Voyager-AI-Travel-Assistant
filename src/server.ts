@@ -70,7 +70,7 @@ export class TravelAgent extends AIChatAgent {
 }
 
 export default {
-  async fetch(request: Request, env: any) {
+  async fetch(request: Request, env: Env) {
     return (
       (await routeAgentRequest(request, env)) ||
       new Response("Not found", { status: 404 })
