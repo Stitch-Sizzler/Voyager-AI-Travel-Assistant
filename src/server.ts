@@ -1927,7 +1927,8 @@ export class TravelAgent extends AIChatAgent {
         }),
 
         getLocalNews: tool({
-          description: "Get the top 3 current local news headlines and articles for a city",
+          description:
+            "Get the top 3 current local news headlines and articles for a city",
           inputSchema: jsonSchema({
             type: "object" as const,
             properties: {
@@ -1939,28 +1940,46 @@ export class TravelAgent extends AIChatAgent {
             const loc = await resolveLocation(city);
             try {
               const url = `https://news.google.com/rss/search?q=${encodeURIComponent(loc.city)}&hl=en-US&gl=US&ceid=US:en`;
-              const res = await fetch(url, { headers: { "User-Agent": "VoyagerTravelAgent/1.0" } });
+              const res = await fetch(url, {
+                headers: { "User-Agent": "VoyagerTravelAgent/1.0" }
+              });
               if (res.ok) {
                 const xmlText = await res.text();
                 const items = [];
                 const itemRegex = /<item>([\s\S]*?)<\/item>/g;
                 let match;
-                while ((match = itemRegex.exec(xmlText)) !== null && items.length < 3) {
+                while (
+                  (match = itemRegex.exec(xmlText)) !== null &&
+                  items.length < 3
+                ) {
                   const itemContent = match[1];
-                  const title = (itemContent.match(/<title>([\s\S]*?)<\/title>/)?.[1] || "Local News Update")
+                  const title = (
+                    itemContent.match(/<title>([\s\S]*?)<\/title>/)?.[1] ||
+                    "Local News Update"
+                  )
                     .replace(/&amp;/g, "&")
                     .replace(/&lt;/g, "<")
                     .replace(/&gt;/g, ">")
                     .replace(/&quot;/g, '"')
                     .replace(/&#39;/g, "'");
-                  const link = itemContent.match(/<link>([\s\S]*?)<\/link>/)?.[1] || "https://news.google.com";
-                  const pubDate = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] || "";
-                  const source = itemContent.match(/<source[\s\S]*?>([\s\S]*?)<\/source>/)?.[1] || "News Source";
-                  
+                  const link =
+                    itemContent.match(/<link>([\s\S]*?)<\/link>/)?.[1] ||
+                    "https://news.google.com";
+                  const pubDate =
+                    itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] ||
+                    "";
+                  const source =
+                    itemContent.match(
+                      /<source[\s\S]*?>([\s\S]*?)<\/source>/
+                    )?.[1] || "News Source";
+
                   let dateStr = pubDate;
                   try {
                     const d = new Date(pubDate);
-                    dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    dateStr = d.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric"
+                    });
                   } catch {
                     // ignore
                   }
@@ -1995,7 +2014,8 @@ export class TravelAgent extends AIChatAgent {
         }),
 
         getSunTimes: tool({
-          description: "Get sunrise, sunset, solar noon, and day length for a city",
+          description:
+            "Get sunrise, sunset, solar noon, and day length for a city",
           inputSchema: jsonSchema({
             type: "object" as const,
             properties: {
@@ -2006,14 +2026,26 @@ export class TravelAgent extends AIChatAgent {
           execute: async ({ city }: { city: string }) => {
             const loc = await resolveLocation(city);
             try {
-              const res = await fetch(`https://api.sunrise-sunset.org/json?lat=${loc.lat}&lng=${loc.lon}&formatted=0`);
+              const res = await fetch(
+                `https://api.sunrise-sunset.org/json?lat=${loc.lat}&lng=${loc.lon}&formatted=0`
+              );
               if (res.ok) {
-                const json = await res.json() as { results: { sunrise: string; sunset: string; solar_noon: string; day_length: string } };
+                const json = (await res.json()) as {
+                  results: {
+                    sunrise: string;
+                    sunset: string;
+                    solar_noon: string;
+                    day_length: string;
+                  };
+                };
                 const results = json.results;
                 const formatTime = (iso: string) => {
                   try {
                     const date = new Date(iso);
-                    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+                    return date.toLocaleTimeString("en-US", {
+                      hour: "numeric",
+                      minute: "2-digit"
+                    });
                   } catch {
                     return iso;
                   }
@@ -2045,7 +2077,8 @@ export class TravelAgent extends AIChatAgent {
         }),
 
         getAirQuality: tool({
-          description: "Get current European air quality index (AQI) and PM concentrations for a city",
+          description:
+            "Get current European air quality index (AQI) and PM concentrations for a city",
           inputSchema: jsonSchema({
             type: "object" as const,
             properties: {
@@ -2056,9 +2089,17 @@ export class TravelAgent extends AIChatAgent {
           execute: async ({ city }: { city: string }) => {
             const loc = await resolveLocation(city);
             try {
-              const res = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${loc.lat}&longitude=${loc.lon}&current=european_aqi,pm2_5,pm10`);
+              const res = await fetch(
+                `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${loc.lat}&longitude=${loc.lon}&current=european_aqi,pm2_5,pm10`
+              );
               if (res.ok) {
-                const json = await res.json() as { current: { european_aqi?: number; pm2_5?: number; pm10?: number } };
+                const json = (await res.json()) as {
+                  current: {
+                    european_aqi?: number;
+                    pm2_5?: number;
+                    pm10?: number;
+                  };
+                };
                 return {
                   city: loc.city,
                   aqi: json.current?.european_aqi ?? 28,

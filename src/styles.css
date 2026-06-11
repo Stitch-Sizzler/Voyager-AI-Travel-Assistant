@@ -478,7 +478,8 @@ body,
 
 /* Star twinkle animation */
 @keyframes twinkle {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.25;
   }
   50% {
@@ -732,7 +733,12 @@ body,
 
 /* Brand Typography */
 .font-brand {
-  font-family: "Outfit", "Inter", system-ui, -apple-system, sans-serif;
+  font-family:
+    "Outfit",
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .voyager-brand {
@@ -750,7 +756,10 @@ body,
   border: 1px solid var(--travel-glass-border);
   border-radius: 16px;
   box-shadow: var(--travel-shadow);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s, border-color 0.4s;
+  transition:
+    all 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s,
+    border-color 0.4s;
 }
 
 /* Symmetrical Header Bubble with matching transparency and blur */

@@ -646,7 +646,7 @@ function ToolOutputCard({
               {aqiDesc}
             </span>
             <div className="text-[11px] opacity-50">
-              PM2.5: {fallbackVal(data.pm2_5)} µg/m³
+              PM2.5: {fallbackVal(data.pm2_5 as number | string)} µg/m³
             </div>
           </div>
         </div>
@@ -1060,7 +1060,10 @@ function TravelBackground() {
         </g>
 
         {/* Compass Rose Instrument Group (Travels and rotates slowly) */}
-        <g transform={`translate(${compassX}, ${compassY}) rotate(${compassDeg})`} opacity="0.25">
+        <g
+          transform={`translate(${compassX}, ${compassY}) rotate(${compassDeg})`}
+          opacity="0.25"
+        >
           <circle
             cx="0"
             cy="0"
@@ -1366,7 +1369,6 @@ const PROMPT_POSITIONS = [
     type: "right"
   }
 ];
-
 
 // ── Main Chat Component ────────────────────────────────────────────────
 
@@ -2540,9 +2542,13 @@ function Chat() {
 }
 
 const container = document.getElementById("root")!;
-let root = (window as any).__reactRoot;
+interface CustomWindow extends Window {
+  __reactRoot?: ReturnType<typeof createRoot>;
+}
+const customWindow = window as unknown as CustomWindow;
+let root = customWindow.__reactRoot;
 if (!root) {
   root = createRoot(container);
-  (window as any).__reactRoot = root;
+  customWindow.__reactRoot = root;
 }
 root.render(<Chat />);
