@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="AI chat agent built with Cloudflare Agents"
+      content="Voyager — your AI travel assistant. Get weather forecasts, flight estimates, currency exchange, packing lists, local phrases, and destination guides powered by Cloudflare Workers AI."
     />
-    <title>Agent Starter</title>
+    <title>Voyager — AI Travel Assistant</title>
     <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <script>
       (() => {
-        const mode = localStorage.getItem("theme") || "light";
+        const mode = localStorage.getItem("theme") || "dark";
         document.documentElement.setAttribute("data-mode", mode);
         document.documentElement.style.colorScheme = mode;
       })();

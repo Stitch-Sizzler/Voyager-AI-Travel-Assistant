@@ -1,28 +1,37 @@
-# Cloudflare AI Travel Agent
+# Voyager — AI Travel Assistant
 
-This repository contains an AI-powered travel assistant built exclusively on the Cloudflare platform.
+An immersive, premium AI-powered travel assistant dashboard built entirely on the Cloudflare platform using Cloudflare Agents, Durable Objects, and Workers AI. Deployed live at: **[https://cf-ai-voyager-travel-agent.s-mohiuddin-msm.workers.dev](https://cf-ai-voyager-travel-agent.s-mohiuddin-msm.workers.dev)**.
+
+---
+
+## Model & Custom Tools
+
+Voyager is powered by the `@cf/meta/llama-4-scout-17b-16e-instruct` large language model running on Cloudflare Workers AI. The model has access to the following 10 custom travel tools:
+
+*   **`getWeather`**: Fetches weather forecasts for any city.
+*   **`getAttractions`**: Lists top landmarks and city attractions.
+*   **`estimateFlightCost`**: Estimates flight expenses for economy/business.
+*   **`getFlightDistance`**: Computes flight distances and travel times.
+*   **`getCurrencyExchange`**: Performs real-time currency conversions.
+*   **`getPackingList`**: Recommends items tailored to destinations and styles.
+*   **`getLocalPhrases`**: Translates phrases and details phonetic pronunciations.
+*   **`getLocalNews`**: Returns local headlines and link details.
+*   **`getSunTimes`**: Retrieves sun schedules (sunrise, sunset, solar noon).
+*   **`getAirQuality`**: Determines European AQI ratings and PM metrics.
+
+---
 
 ## Application Architecture
 
-This application implements an AI agent loop utilizing Cloudflare Agents:
+This application implements a stateful agent loop using the Cloudflare Agents SDK:
 
-1. **LLM:** Powered by `llama-4-scout-17b-16e-instruct` via Workers AI.
-2. **User Input:** Chat UI built with React, communicating with the backend over WebSockets, served dynamically.
-3. **Tools:** Implements custom server-side tools (`getWeather` and `getAttraction`) that the LLM calls based on user prompts.
+1.  **State Management**: Utilizes Cloudflare Durable Objects to store chat histories and agent context.
+2.  **Client-Server Stream**: Chat interface built with React, communicating with the backend over WebSockets/SSE stream.
 
-## Running the Application Locally
+---
 
-Prerequisites: Node.js (18+) and an active Cloudflare account.
+## User Interface
 
-1. `npm install`
-2. `npx wrangler types`
-3. `npm run deploy`
-4. Open the URL (ending in `wokers.dev`) in a browser.
-
-## Test Tools
-
-Once the assistant is running, try the following: `What is the weather and top attraction in Tokyo?`
-
-To test memory, follow up with `What about in Paris?` and the assistant should remember the context.
-
-**Note: The assistant currently uses randomized weather data and mock data for attractions.**
+*   **Dynamic 3D HUD Interface**: Features 10 floating, interactive prompt suggestions laid out in a balanced 3D cockpit arrangement, complete with custom scale transformations and skews.
+*   **Twinkling Stellar Atmosphere**: Dynamic background featuring 250 custom twinkling stars that adapt to light and dark modes (colorful pastels in light mode, clean white in dark mode).
+*   **Custom Rich-Output Cards**: Tailored widget components for rendering complex backend data (news articles, packing tables, currency flows, sunset/sunrise diagrams, and colorful AQI scales).
