@@ -1,5 +1,5 @@
 {
-  "name": "cf-ai-voyager-travel-agent",
+  "name": "chat",
   "account_id": "0dd38357bd6a54751de833a00e3bb60b",
   "main": "src/server.ts",
   "compatibility_date": "2026-04-23",

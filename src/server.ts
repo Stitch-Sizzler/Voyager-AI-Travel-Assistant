@@ -454,7 +454,55 @@ interface OpenMeteoGeocodingResponse {
     latitude: number;
     longitude: number;
     name?: string;
+    timezone?: string;
   }>;
+}
+
+function getCityTimezone(city: string): string {
+  const name = city.toLowerCase().trim();
+  if (name === "paris") return "Europe/Paris";
+  if (name === "tokyo") return "Asia/Tokyo";
+  if (name === "london") return "Europe/London";
+  if (
+    name === "new york" ||
+    name === "new york city" ||
+    name === "orlando" ||
+    name === "miami"
+  )
+    return "America/New_York";
+  if (name === "edmonton") return "America/Edmonton";
+  if (name === "calgary") return "America/Calgary";
+  if (name === "toronto") return "America/Toronto";
+  if (name === "dubai") return "Asia/Dubai";
+  if (name === "sydney") return "Australia/Sydney";
+  if (name === "rome") return "Europe/Rome";
+  if (name === "barcelona") return "Europe/Madrid";
+  if (name === "bangkok") return "Asia/Bangkok";
+  if (name === "bali") return "Asia/Makassar";
+  if (name === "cancun") return "America/Cancun";
+  if (name === "istanbul") return "Europe/Istanbul";
+  if (name === "amsterdam") return "Europe/Amsterdam";
+  if (name === "singapore") return "Asia/Singapore";
+  if (name === "lisbon") return "Europe/Lisbon";
+  if (name === "berlin") return "Europe/Berlin";
+  if (name === "cairo") return "Africa/Cairo";
+  if (name === "mumbai") return "Asia/Kolkata";
+  if (name === "seoul") return "Asia/Seoul";
+  if (name === "rio de janeiro") return "America/Sao_Paulo";
+  if (name === "nairobi") return "Africa/Nairobi";
+  if (name === "reykjavik") return "Atlantic/Reykjavik";
+  if (name === "vancouver") return "America/Vancouver";
+  if (name === "los angeles" || name === "san francisco")
+    return "America/Los_Angeles";
+  if (name === "chicago") return "America/Chicago";
+  if (name === "hong kong") return "Asia/Hong_Kong";
+  if (name === "marrakech") return "Africa/Casablanca";
+  if (name === "athens") return "Europe/Athens";
+  if (name === "prague") return "Europe/Prague";
+  if (name === "vienna") return "Europe/Vienna";
+  if (name === "buenos aires") return "America/Argentina/Buenos_Aires";
+  if (name === "cape town") return "Africa/Johannesburg";
+  return "UTC";
 }
 
 async function resolveLocation(place: string): Promise<{
@@ -465,6 +513,7 @@ async function resolveLocation(place: string): Promise<{
   countryCode: string;
   currency: string;
   language: string;
+  timezone: string;
 }> {
   const clean = place.trim().toLowerCase();
 
@@ -478,7 +527,8 @@ async function resolveLocation(place: string): Promise<{
       country: coords.country,
       countryCode: getCountryCode(coords.country),
       currency: coords.currency,
-      language: coords.language
+      language: coords.language,
+      timezone: getCityTimezone(clean)
     };
   }
 
@@ -492,7 +542,8 @@ async function resolveLocation(place: string): Promise<{
         country: data.country,
         countryCode: getCountryCode(data.country),
         currency: data.currency,
-        language: data.language
+        language: data.language,
+        timezone: getCityTimezone(name)
       };
     }
   }
@@ -521,7 +572,8 @@ async function resolveLocation(place: string): Promise<{
           country: country,
           countryCode: countryCode,
           currency: meta.currency,
-          language: meta.language
+          language: meta.language,
+          timezone: result.timezone || "UTC"
         };
       }
     }
@@ -544,7 +596,8 @@ async function resolveLocation(place: string): Promise<{
     country: defaultCity.country,
     countryCode: "US",
     currency: defaultCity.currency,
-    language: defaultCity.language
+    language: defaultCity.language,
+    timezone: "America/New_York"
   };
 }
 
@@ -611,7 +664,7 @@ const exchangeRates: Record<string, number> = {
 };
 
 // ── Local phrases database ─────────────────────────────────────────────
-const phrasesDB: Record<
+const _phrasesDB: Record<
   string,
   Array<{ english: string; local: string; pronunciation: string }>
 > = {
@@ -1422,13 +1475,58 @@ async function fetchWeather(lat: number, lon: number, _city: string) {
   return forecast;
 }
 
-interface WikipediaGeosearchResponse {
-  query?: {
-    geosearch?: Array<{
-      title: string;
-      pageid: number;
-    }>;
-  };
+async function getAttractionNames(city: string, env: Env): Promise<string[]> {
+  const accountId = env.CF_ACCOUNT_ID ?? "0dd38357bd6a54751de833a00e3bb60b";
+  const apiKey = await getAPIToken(env);
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a helpful travel database. Respond ONLY with a valid JSON array of strings containing the top 3 most famous landmark/tourist attraction names for the requested city. Do not include any markdown, markdown code blocks, or extra text."
+            },
+            {
+              role: "user",
+              content: city
+            }
+          ],
+          model: "@cf/meta/llama-4-scout-17b-16e-instruct"
+        })
+      }
+    );
+    if (res.ok) {
+      const data = (await res.json()) as {
+        choices?: Array<{ message?: { content?: unknown } }>;
+      };
+      const rawContent = data?.choices?.[0]?.message?.content;
+      if (Array.isArray(rawContent)) {
+        return rawContent.slice(0, 3).map(String);
+      }
+      if (typeof rawContent === "string") {
+        const cleaned = rawContent
+          .trim()
+          .replace(/^```json\s*/i, "")
+          .replace(/```$/, "")
+          .trim();
+        const arr = JSON.parse(cleaned);
+        if (Array.isArray(arr)) {
+          return arr.slice(0, 3).map(String);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Failed to fetch attraction names from AI:", e);
+  }
+  return ["Eiffel Tower", "Louvre Museum", "Arc de Triomphe"];
 }
 
 interface WikipediaSummaryResponse {
@@ -1437,89 +1535,86 @@ interface WikipediaSummaryResponse {
   description?: string;
 }
 
-async function fetchAttractions(city: string, lat: number, lon: number) {
+async function fetchAttractions(
+  city: string,
+  _lat: number,
+  _lon: number,
+  env: Env
+) {
   try {
-    const url = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gsradius=10000&gscoord=${lat}|${lon}&gslimit=6&format=json&origin=*`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": "VoyagerTravelAgent/1.0" }
-    });
-    if (res.ok) {
-      const json = (await res.json()) as WikipediaGeosearchResponse;
-      const pages = json?.query?.geosearch || [];
-      const attractions = [];
+    const attractionNames = await getAttractionNames(city, env);
+    const attractions = [];
 
-      for (const page of pages) {
-        if (attractions.length >= 3) break;
-        try {
-          const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(page.title)}`;
-          const sumRes = await fetch(sumUrl, {
-            headers: { "User-Agent": "VoyagerTravelAgent/1.0" }
+    for (const name of attractionNames) {
+      try {
+        const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`;
+        const sumRes = await fetch(sumUrl, {
+          headers: { "User-Agent": "VoyagerTravelAgent/1.0" }
+        });
+        if (sumRes.ok) {
+          const sumJson = (await sumRes.json()) as WikipediaSummaryResponse;
+          const attractionTitle = sumJson.title;
+          const description =
+            sumJson.extract ||
+            sumJson.description ||
+            "Interesting local place to visit and explore.";
+
+          let category = "Sightseeing";
+          const descLower = (sumJson.description || "").toLowerCase();
+          const nameLower = attractionTitle.toLowerCase();
+          if (
+            descLower.includes("museum") ||
+            descLower.includes("gallery") ||
+            nameLower.includes("museum")
+          )
+            category = "Museum";
+          else if (
+            descLower.includes("church") ||
+            descLower.includes("cathedral") ||
+            descLower.includes("temple") ||
+            descLower.includes("mosque") ||
+            descLower.includes("basilica") ||
+            descLower.includes("synagogue")
+          )
+            category = "Religious Site";
+          else if (
+            descLower.includes("park") ||
+            descLower.includes("garden") ||
+            descLower.includes("lake") ||
+            descLower.includes("mountain") ||
+            descLower.includes("forest") ||
+            descLower.includes("beach")
+          )
+            category = "Nature";
+          else if (
+            descLower.includes("castle") ||
+            descLower.includes("palace") ||
+            descLower.includes("monument") ||
+            descLower.includes("bridge") ||
+            descLower.includes("tower") ||
+            descLower.includes("historic") ||
+            descLower.includes("square")
+          )
+            category = "Landmark";
+          else if (sumJson.description) category = sumJson.description;
+
+          attractions.push({
+            name: attractionTitle,
+            description:
+              description.length > 150
+                ? description.substring(0, 147) + "..."
+                : description,
+            category: category.charAt(0).toUpperCase() + category.slice(1)
           });
-          if (sumRes.ok) {
-            const sumJson = (await sumRes.json()) as WikipediaSummaryResponse;
-            const name = sumJson.title;
-            const description =
-              sumJson.extract ||
-              sumJson.description ||
-              "Interesting local place to visit and explore.";
-
-            let category = "Sightseeing";
-            const descLower = (sumJson.description || "").toLowerCase();
-            const nameLower = name.toLowerCase();
-            if (
-              descLower.includes("museum") ||
-              descLower.includes("gallery") ||
-              nameLower.includes("museum")
-            )
-              category = "Museum";
-            else if (
-              descLower.includes("church") ||
-              descLower.includes("cathedral") ||
-              descLower.includes("temple") ||
-              descLower.includes("mosque") ||
-              descLower.includes("basilica") ||
-              descLower.includes("synagogue")
-            )
-              category = "Religious Site";
-            else if (
-              descLower.includes("park") ||
-              descLower.includes("garden") ||
-              descLower.includes("lake") ||
-              descLower.includes("mountain") ||
-              descLower.includes("forest") ||
-              descLower.includes("beach")
-            )
-              category = "Nature";
-            else if (
-              descLower.includes("castle") ||
-              descLower.includes("palace") ||
-              descLower.includes("monument") ||
-              descLower.includes("bridge") ||
-              descLower.includes("tower") ||
-              descLower.includes("historic") ||
-              descLower.includes("square")
-            )
-              category = "Landmark";
-            else if (sumJson.description) category = sumJson.description;
-
-            attractions.push({
-              name,
-              description:
-                description.length > 150
-                  ? description.substring(0, 147) + "..."
-                  : description,
-              category: category.charAt(0).toUpperCase() + category.slice(1)
-            });
-          }
-        } catch {
-          // ignore page fetch error
         }
+      } catch {
+        // ignore page fetch error
       }
-
-      if (attractions.length > 0) return attractions;
     }
+
+    if (attractions.length > 0) return attractions;
   } catch (e) {
-    console.error("Wikipedia geosearch error:", e);
+    console.error("Wikipedia attractions fetch error:", e);
   }
 
   return [
@@ -1569,6 +1664,90 @@ async function getExchangeRates(): Promise<Record<string, number>> {
     console.error("Failed to fetch exchange rates, using backup:", e);
   }
   return exchangeRates;
+}
+
+function getLanguageCode(lang: string): string {
+  const name = lang.toLowerCase().trim();
+  if (name.includes("english")) return "en";
+  if (name.includes("french")) return "fr";
+  if (name.includes("german")) return "de";
+  if (name.includes("italian")) return "it";
+  if (name.includes("spanish")) return "es";
+  if (name.includes("japanese")) return "ja";
+  if (
+    name.includes("chinese") ||
+    name.includes("cantonese") ||
+    name.includes("mandarin")
+  )
+    return "zh";
+  if (name.includes("hindi")) return "hi";
+  if (name.includes("arabic")) return "ar";
+  if (name.includes("portuguese")) return "pt";
+  if (name.includes("thai")) return "th";
+  if (name.includes("korean")) return "ko";
+  if (name.includes("dutch")) return "nl";
+  if (name.includes("russian")) return "ru";
+  if (name.includes("greek")) return "el";
+  if (name.includes("turkish")) return "tr";
+  if (name.includes("swedish")) return "sv";
+  if (name.includes("norwegian")) return "no";
+  if (name.includes("finnish")) return "fi";
+  if (name.includes("danish")) return "da";
+  if (name.includes("polish")) return "pl";
+  if (name.includes("indonesian")) return "id";
+  if (name.includes("vietnamese")) return "vi";
+  if (name.includes("czech")) return "cs";
+  if (name.includes("hungarian")) return "hu";
+  if (name.includes("malay")) return "ms";
+  if (name.includes("romanian")) return "ro";
+  if (name.includes("ukrainian")) return "uk";
+  if (name.includes("filipino") || name.includes("tagalog")) return "tl";
+  if (name.includes("swahili")) return "sw";
+  if (name.includes("icelandic")) return "is";
+  if (name.includes("hebrew")) return "he";
+  if (name.includes("persian")) return "fa";
+  if (name.includes("urdu")) return "ur";
+  if (name.includes("bengali")) return "bn";
+  if (name.includes("tamil")) return "ta";
+  if (name.includes("sinhala")) return "si";
+  if (name.includes("khmer")) return "km";
+  if (name.includes("lao")) return "lo";
+  return "en";
+}
+
+async function translateText(
+  text: string,
+  targetLang: string,
+  env: Env
+): Promise<string> {
+  const accountId = env.CF_ACCOUNT_ID ?? "0dd38357bd6a54751de833a00e3bb60b";
+  const apiKey = await getAPIToken(env);
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/m2m100-1.2b`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          text,
+          source_lang: "en",
+          target_lang: targetLang
+        })
+      }
+    );
+    if (res.ok) {
+      const data = (await res.json()) as {
+        result?: { translated_text?: string };
+      };
+      return data?.result?.translated_text || text;
+    }
+  } catch (e) {
+    console.error("Translation API error:", e);
+  }
+  return text;
 }
 
 export class TravelAgent extends AIChatAgent {
@@ -1655,7 +1834,8 @@ export class TravelAgent extends AIChatAgent {
             const attractions = await fetchAttractions(
               loc.city,
               loc.lat,
-              loc.lon
+              loc.lon,
+              this.env
             );
             return { city: loc.city, attractions };
           }
@@ -1909,20 +2089,63 @@ export class TravelAgent extends AIChatAgent {
           execute: async ({ destination }: { destination: string }) => {
             const resolved = await resolveLocation(destination);
             const language = resolved.language;
+            const langCode = getLanguageCode(language);
 
-            if (!language || !phrasesDB[language]) {
+            const STANDARD_PHRASES = [
+              "Hello",
+              "Thank you",
+              "Please",
+              "Excuse me",
+              "Where is...?",
+              "How much?",
+              "Goodbye",
+              "Yes / No"
+            ];
+
+            if (langCode === "en") {
               return {
                 destination: resolved.city,
-                note: `I don't have phrase data for ${resolved.city} yet. The primary language there (${language || "unknown"}) may use English or a language I haven't cataloged.`
+                language,
+                phrases: STANDARD_PHRASES.map((phrase) => ({
+                  english: phrase,
+                  local: phrase,
+                  pronunciation: ""
+                })),
+                tip: "The primary language spoken here is English."
               };
             }
 
-            return {
-              destination: resolved.city,
-              language,
-              phrases: phrasesDB[language],
-              tip: "Locals always appreciate when visitors try to speak the local language, even imperfectly! A smile and effort go a long way."
-            };
+            try {
+              const translated = await Promise.all(
+                STANDARD_PHRASES.map(async (phrase) => {
+                  const local = await translateText(phrase, langCode, this.env);
+                  return {
+                    english: phrase,
+                    local,
+                    pronunciation: ""
+                  };
+                })
+              );
+
+              return {
+                destination: resolved.city,
+                language,
+                phrases: translated,
+                tip: `Translations generated dynamically using Cloudflare Workers AI.`
+              };
+            } catch (e) {
+              console.error("Failed to generate dynamic phrases:", e);
+              return {
+                destination: resolved.city,
+                language,
+                phrases: STANDARD_PHRASES.map((phrase) => ({
+                  english: phrase,
+                  local: phrase,
+                  pronunciation: ""
+                })),
+                tip: "Failed to translate phrases. Displaying in English."
+              };
+            }
           }
         }),
 
@@ -2044,7 +2267,8 @@ export class TravelAgent extends AIChatAgent {
                     const date = new Date(iso);
                     return date.toLocaleTimeString("en-US", {
                       hour: "numeric",
-                      minute: "2-digit"
+                      minute: "2-digit",
+                      timeZone: loc.timezone
                     });
                   } catch {
                     return iso;

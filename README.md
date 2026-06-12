@@ -1,12 +1,14 @@
 # Voyager — AI Travel Assistant
 
-An immersive, premium AI-powered travel assistant dashboard built entirely on the Cloudflare platform using Cloudflare Agents, Durable Objects, and Workers AI. Deployed live at: **[https://cf-ai-voyager-travel-agent.s-mohiuddin-msm.workers.dev](https://cf-ai-voyager-travel-agent.s-mohiuddin-msm.workers.dev)**.
+### Deployed live at: **[https://chat.voyager-ai.workers.dev](https://chat.voyager-ai.workers.dev)**
+
+An immersive, premium AI-powered travel assistant dashboard built entirely on the Cloudflare platform using Cloudflare Agents, Durable Objects, and Workers AI.
 
 ---
 
 ## Model & Custom Tools
 
-Voyager is powered by the `@cf/meta/llama-4-scout-17b-16e-instruct` large language model running on Cloudflare Workers AI. The model has access to the following 10 custom travel tools:
+Voyager is powered by Meta's `llama-4-scout-17b-16e-instruct` LLM running on Cloudflare Workers AI. The model has access to the following 10 custom travel tools:
 
 - **`getWeather`**: Fetches weather forecasts for any city.
 - **`getAttractions`**: Lists top landmarks and city attractions.
@@ -17,7 +19,7 @@ Voyager is powered by the `@cf/meta/llama-4-scout-17b-16e-instruct` large langua
 - **`getLocalPhrases`**: Translates phrases and details phonetic pronunciations.
 - **`getLocalNews`**: Returns local headlines and link details.
 - **`getSunTimes`**: Retrieves sun schedules (sunrise, sunset, solar noon).
-- **`getAirQuality`**: Determines European AQI ratings and PM metrics.
+- **`getAirQuality`**: Determines European Air Quality Index (EAQI) ratings and PM metrics.
 
 ---
 

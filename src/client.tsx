@@ -478,9 +478,11 @@ function ToolOutputCard({
               </span>
               <div className="flex-1">
                 <div className="font-medium text-sm">{p.local}</div>
-                <div className="text-xs opacity-40 italic">
-                  {p.pronunciation}
-                </div>
+                {p.pronunciation && (
+                  <div className="text-xs opacity-40 italic">
+                    {p.pronunciation}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -1381,8 +1383,8 @@ function Chat() {
     () => document.documentElement.getAttribute("data-mode") !== "light"
   );
 
-  // Default to Demo Mode (true) for testing visual cards offline while quota is reset
-  const [demoMode, setDemoMode] = useState(true);
+  // Default to Live Mode (false) now that Cloudflare limits are reset
+  const [demoMode, setDemoMode] = useState(false);
   const [demoMessages, setDemoMessages] = useState<UIMessage[]>([]);
   const [demoStatus, setDemoStatus] = useState<
     "idle" | "streaming" | "submitted"
@@ -2299,7 +2301,11 @@ function Chat() {
               }}
             />
             <span className="text-xs opacity-50">
-              {demoMode ? "Offline Simulate" : connected ? "Live" : "Offline"}
+              {demoMode
+                ? "Offline (Mock Data)"
+                : connected
+                  ? "Live"
+                  : "Offline"}
             </span>
           </div>
 
@@ -2424,32 +2430,6 @@ function Chat() {
 
                 return (
                   <div key={message.id} className="space-y-2 message-enter">
-                    {/* Tool parts */}
-                    {message.parts.filter(isToolUIPart).map((part) => {
-                      const toolName = getToolName(part);
-                      if (part.state === "output-available") {
-                        return (
-                          <div key={part.toolCallId} className="max-w-lg">
-                            <ToolOutputCard
-                              toolName={toolName}
-                              output={part.output}
-                            />
-                          </div>
-                        );
-                      }
-                      if (
-                        part.state === "input-available" ||
-                        part.state === "input-streaming"
-                      ) {
-                        return (
-                          <div key={part.toolCallId} className="max-w-lg">
-                            <ToolRunningCard toolName={toolName} />
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-
                     {/* Text parts */}
                     {message.parts
                       .filter((part) => part.type === "text")
@@ -2483,6 +2463,32 @@ function Chat() {
                           </div>
                         );
                       })}
+
+                    {/* Tool parts */}
+                    {message.parts.filter(isToolUIPart).map((part) => {
+                      const toolName = getToolName(part);
+                      if (part.state === "output-available") {
+                        return (
+                          <div key={part.toolCallId} className="max-w-lg">
+                            <ToolOutputCard
+                              toolName={toolName}
+                              output={part.output}
+                            />
+                          </div>
+                        );
+                      }
+                      if (
+                        part.state === "input-available" ||
+                        part.state === "input-streaming"
+                      ) {
+                        return (
+                          <div key={part.toolCallId} className="max-w-lg">
+                            <ToolRunningCard toolName={toolName} />
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
                   </div>
                 );
               })}
